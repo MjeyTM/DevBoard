@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter";
+  --font-mono: "JetBrains Mono";
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  @apply bg-base-100 text-base-content antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+}
+
+@layer components {
+  .app-shell {
+    @apply bg-base-100 text-base-content;
+  }
+
+  .sidebar-shell {
+    @apply bg-base-200/60 text-base-content border-r border-base-300/40;
+  }
+
+  .sidebar-title {
+    @apply text-sm font-semibold tracking-tight;
+  }
+
+  .sidebar-section-title {
+    @apply text-[11px] uppercase tracking-wider text-base-content/50;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-base-content/70 transition-colors;
+  }
+
+  .sidebar-item-active {
+    @apply bg-base-200/60 text-base-content;
+  }
+
+  .sidebar-item-hover {
+    @apply hover:bg-base-200/40 hover:text-base-content;
+  }
+
+  .surface-card {
+    @apply bg-base-200/60 shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-xl;
+  }
+
+  .surface-raised {
+    @apply bg-base-200/80 shadow-[0_8px_24px_rgba(0,0,0,0.1)] rounded-2xl;
+  }
+
+  .surface-overlay {
+    @apply bg-base-100/80 backdrop-blur-md shadow-[0_20px_60px_rgba(15,23,42,0.18)] rounded-2xl border border-base-200/60;
+  }
+
+  .divider-subtle {
+    @apply h-px bg-base-300/60;
+  }
+
+  .link-muted {
+    @apply text-base-content/60 hover:text-base-content transition-colors;
+  }
+
+  .nav-item {
+    @apply rounded-lg px-3 py-2 text-sm transition-colors;
+  }
+
+  .nav-item-active {
+    @apply bg-base-300/60 font-medium;
+  }
+
+  .nav-item-hover {
+    @apply hover:bg-base-200/40;
+  }
+
+  .page-header {
+    @apply mb-6 space-y-2;
+  }
+
+  .page-title {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-base-content/60;
+  }
+
+  .tab-pill {
+    @apply rounded-full px-3 py-1.5 text-sm text-base-content/70 hover:bg-base-200/50 transition-colors;
+  }
+
+  .tab-pill-active {
+    @apply bg-base-200/70 text-base-content;
+  }
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  @apply font-semibold mt-4 mb-2;
+}
+
+.markdown-body p {
+  @apply my-2 leading-6;
+}
+
+.markdown-body ul {
+  @apply list-disc ml-5 my-2;
+}
+
+.markdown-body ol {
+  @apply list-decimal ml-5 my-2;
+}
+
+.markdown-body code {
+  @apply font-mono text-xs bg-base-200 px-1 py-0.5 rounded;
+}
+
+.code-inline {
+  @apply font-mono text-xs bg-base-200 px-1 py-0.5 rounded;
+}
+
+/* highlight.js theme overrides */
+.hljs {
+  @apply bg-base-200 text-base-content rounded-md p-3 text-sm;
+}
