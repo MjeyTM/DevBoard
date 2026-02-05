@@ -4,7 +4,6 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useParams, useSearchParams } from "react-router-dom";
 import { db } from "../data/db";
 import { useSettings } from "../hooks/useSettings";
-import { useUIStore } from "../stores/uiStore";
 import { Input } from "../components/ui/input";
 import { Select } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
@@ -19,7 +18,6 @@ export const ProjectListPage = () => {
   const { projectId } = useParams();
   const [searchParams] = useSearchParams();
   const { settings, updateSettings } = useSettings();
-  const { setSelectedTask } = useUIStore();
   const [statusFilter, setStatusFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [viewName, setViewName] = useState("");
@@ -37,17 +35,15 @@ export const ProjectListPage = () => {
       [projectId]
     ) ?? [];
 
-  const Row = ({ index, style, items, onSelect }: RowComponentProps<{
+  const Row = ({ index, style, items }: RowComponentProps<{
     items: Task[];
-    onSelect: (taskId: string) => void;
   }>) => {
     const task = items[index];
     if (!task) return null;
     return (
       <div
         style={style}
-        className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-2 px-4 py-3 border-b border-base-200/60 text-sm hover:bg-base-200/40 cursor-pointer transition-colors"
-        onClick={() => onSelect(task.taskId)}
+        className="grid grid-cols-[2fr_1fr_1fr_1fr] gap-2 px-4 py-3 border-b border-base-200/60 text-sm hover:bg-base-200/40 transition-colors"
       >
         <div>
           <div className="font-medium">{task.title}</div>
@@ -135,7 +131,7 @@ export const ProjectListPage = () => {
           rowCount={filtered.length}
           rowHeight={56}
           rowComponent={Row}
-          rowProps={{ items: filtered, onSelect: setSelectedTask }}
+          rowProps={{ items: filtered }}
           style={{ height: 480 }}
         />
       </div>

@@ -11,9 +11,11 @@ import { Select } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { Checkbox } from "../ui/checkbox";
+import { DatePicker } from "../ui/date-picker";
+import { MultiSelect } from "../ui/multi-select";
 import { updateTask, updateNote, startTimeLog, stopTimeLog, convertChecklistItemToTask } from "../../data/api";
 import { useSettings } from "../../hooks/useSettings";
-import { formatDate, toCalendarInput, toIsoDate } from "../../lib/date";
+import { formatDate } from "../../lib/date";
 import { extractNoteLinks } from "../../utils/notes";
 import { createId } from "../../utils/uuid";
 import type { Note, Task } from "../../types/models";
@@ -41,7 +43,7 @@ const SEVERITIES = ["S1", "S2", "S3", "S4"];
 const EFFORTS = ["XS", "S", "M", "L", "XL", "XXL"];
 
 export const InspectorPanel = () => {
-  const { selectedTaskId, selectedNoteId } = useUIStore();
+  const { selectedTaskId, selectedNoteId, setSelectedTask, setSelectedNote } = useUIStore();
   const { settings } = useSettings();
 
   const task = useLiveQuery<Task | undefined>(
@@ -56,6 +58,10 @@ export const InspectorPanel = () => {
 
   const projectId = task?.projectId ?? note?.projectId;
   const open = Boolean(task || note);
+  const closePanel = () => {
+    setSelectedTask(undefined);
+    setSelectedNote(undefined);
+  };
 
   const projectTasks =
     useLiveQuery<Task[]>(
@@ -68,6 +74,11 @@ export const InspectorPanel = () => {
       () => (projectId ? db.notes.where("projectId").equals(projectId).toArray() : []),
       [projectId]
     ) ?? [];
+  const tagOptions = useMemo(() => {
+    const fromTasks = projectTasks.flatMap((item) => item.tags);
+    const fromNotes = projectNotes.flatMap((item) => item.tags);
+    return Array.from(new Set([...fromTasks, ...fromNotes])).sort();
+  }, [projectNotes, projectTasks]);
 
   const backlinks = useMemo(() => {
     if (!note) return [];
@@ -112,6 +123,22 @@ export const InspectorPanel = () => {
           Select a task or note to see details.
         </div>
       ) : null}
+
+      {open && (
+        <div className="sticky top-0 z-10 -mx-4 mb-4 px-4 pb-3 pt-1 bg-base-100/90 backdrop-blur border-b border-base-200/60 flex items-center justify-between">
+          <div className="text-[11px] uppercase tracking-wide text-base-content/50">
+            {task ? "Task Details" : "Note Details"}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={closePanel}>
+              Save
+            </Button>
+            <Button size="sm" variant="ghost" onClick={closePanel}>
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
 
       {task && (
         <div className="space-y-4">
@@ -197,37 +224,30 @@ export const InspectorPanel = () => {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-base-content/60">Start Date ({settings.calendar})</label>
-              <Input
-                type={settings.calendar === "gregorian" ? "date" : "text"}
-                value={toCalendarInput(task.startDate, settings.calendar)}
-                onChange={(event) =>
-                  updateTask(task.taskId, { startDate: toIsoDate(event.target.value, settings.calendar) })
-                }
-                placeholder="YYYY-MM-DD"
+              <DatePicker
+                calendar={settings.calendar}
+                value={task.startDate}
+                onChange={(value) => updateTask(task.taskId, { startDate: value })}
               />
             </div>
             <div>
               <label className="text-xs text-base-content/60">Due Date ({settings.calendar})</label>
-              <Input
-                type={settings.calendar === "gregorian" ? "date" : "text"}
-                value={toCalendarInput(task.dueDate, settings.calendar)}
-                onChange={(event) =>
-                  updateTask(task.taskId, { dueDate: toIsoDate(event.target.value, settings.calendar) })
-                }
-                placeholder="YYYY-MM-DD"
+              <DatePicker
+                calendar={settings.calendar}
+                value={task.dueDate}
+                onChange={(value) => updateTask(task.taskId, { dueDate: value })}
               />
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="text-xs text-base-content/60">Tags (comma separated)</label>
-            <Input
-              value={task.tags.join(", ")}
-              onChange={(event) =>
-                updateTask(task.taskId, {
-                  tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean),
-                })
-              }
+            <MultiSelect
+              options={tagOptions}
+              value={task.tags}
+              onChange={(next) => updateTask(task.taskId, { tags: next })}
+              placeholder="Add tags"
+              allowCreate
             />
           </div>
 
@@ -404,13 +424,12 @@ export const InspectorPanel = () => {
 
           <div className="space-y-2">
             <label className="text-xs text-base-content/60">Tags (comma separated)</label>
-            <Input
-              value={note.tags.join(", ")}
-              onChange={(event) =>
-                updateNote(note.noteId, {
-                  tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean),
-                })
-              }
+            <MultiSelect
+              options={tagOptions}
+              value={note.tags}
+              onChange={(next) => updateNote(note.noteId, { tags: next })}
+              placeholder="Add tags"
+              allowCreate
             />
           </div>
 

@@ -4,9 +4,9 @@ import { db, defaultSettings } from "../data/db";
 import type { Settings } from "../types/models";
 
 export const useSettings = () => {
-  const settings =
-    useLiveQuery(() => db.settings.get("settings"), [], defaultSettings) ??
-    defaultSettings;
+  const storedSettings = useLiveQuery(() => db.settings.get("settings"), [], undefined);
+  const settings = storedSettings ?? defaultSettings;
+  const hydrated = Boolean(storedSettings);
 
   useEffect(() => {
     const resolveTheme = () => {
@@ -30,6 +30,14 @@ export const useSettings = () => {
     root.style.setProperty("--font-sans", sans);
     root.style.setProperty("--font-mono", mono);
   }, [settings.theme, settings.fontFamily, settings.monoFont]);
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return;
+    localStorage.setItem("devboard-theme", settings.theme);
+    localStorage.setItem("devboard-font", settings.fontFamily ?? "system");
+    localStorage.setItem("devboard-mono-font", settings.monoFont ?? "system");
+    localStorage.setItem("devboard-calendar", settings.calendar);
+  }, [hydrated, settings.theme, settings.fontFamily, settings.monoFont, settings.calendar]);
 
   useEffect(() => {
     if (settings.theme !== "system" || typeof window === "undefined") return;

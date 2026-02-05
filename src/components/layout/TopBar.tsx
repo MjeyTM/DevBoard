@@ -6,6 +6,7 @@ import { Button } from "../ui/button";
 import { Select } from "../ui/select";
 import type { Project } from "../../types/models";
 import { ChevronLeft, ChevronRight, MoreHorizontal, Share2 } from "lucide-react";
+import { TabBar } from "./TabBar";
 
 const THEMES = [
   "system",
@@ -57,49 +58,52 @@ export const TopBar = () => {
           : "Overview";
 
   return (
-    <div className="sticky top-0 z-10 px-6 py-3 flex flex-wrap items-center justify-between gap-3 bg-base-100/80 backdrop-blur border-b border-base-200/60">
-      <div className="flex items-center gap-2 text-sm text-base-content/70">
-        <Button size="icon" variant="ghost">
-          <ChevronLeft size={16} />
-        </Button>
-        <Button size="icon" variant="ghost">
-          <ChevronRight size={16} />
-        </Button>
-        <div className="h-5 w-px bg-base-200/70" />
-        <div className="flex items-center gap-2">
-          <span className="text-base-content/50">{isProject ? "Tasks Tracker" : "Workspace"}</span>
-          <span className="text-base-content/40">/</span>
-          <span className="text-base-content">{project?.name ?? "Dashboard"}</span>
-          <span className="text-base-content/40">/</span>
-          <span className="text-base-content/70">{viewLabel}</span>
+    <div className="sticky top-0 z-10 bg-base-100/80 backdrop-blur border-b border-base-200/60">
+      <TabBar />
+      <div className="px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-base-content/70">
+          <Button size="icon" variant="ghost">
+            <ChevronLeft size={16} />
+          </Button>
+          <Button size="icon" variant="ghost">
+            <ChevronRight size={16} />
+          </Button>
+          <div className="h-5 w-px bg-base-200/70" />
+          <div className="flex items-center gap-2">
+            <span className="text-base-content/50">{isProject ? "Tasks Tracker" : "Workspace"}</span>
+            <span className="text-base-content/40">/</span>
+            <span className="text-base-content">{project?.name ?? "Dashboard"}</span>
+            <span className="text-base-content/40">/</span>
+            <span className="text-base-content/70">{viewLabel}</span>
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-center gap-2">
-        <Select
-          value={settings.theme}
-          onChange={(event) => updateSettings({ theme: event.target.value })}
-          className="w-36"
-        >
-          {THEMES.map((theme) => (
-            <option key={theme} value={theme}>
-              {theme}
-            </option>
-          ))}
-        </Select>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => updateSettings({ calendar: settings.calendar === "gregorian" ? "jalali" : "gregorian" })}
-        >
-          {settings.calendar === "gregorian" ? "Jalali" : "Gregorian"}
-        </Button>
-        <Button size="sm" variant="outline">
-          <Share2 size={14} className="mr-1" /> Share
-        </Button>
-        <Button size="icon" variant="ghost">
-          <MoreHorizontal size={16} />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select
+            value={settings.theme}
+            onChange={(event) => updateSettings({ theme: event.target.value })}
+            className="w-36"
+          >
+            {THEMES.map((theme) => (
+              <option key={theme} value={theme}>
+                {theme}
+              </option>
+            ))}
+          </Select>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => updateSettings({ calendar: settings.calendar === "gregorian" ? "jalali" : "gregorian" })}
+          >
+            {settings.calendar === "gregorian" ? "Jalali" : "Gregorian"}
+          </Button>
+          <Button size="sm" variant="outline">
+            <Share2 size={14} className="mr-1" /> Share
+          </Button>
+          <Button size="icon" variant="ghost">
+            <MoreHorizontal size={16} />
+          </Button>
+        </div>
       </div>
     </div>
   );

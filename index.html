@@ -1,11 +1,35 @@
 <!doctype html>
-<html lang="en" data-theme="night">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="DevBoard - Offline Programmer Project Manager" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>DevBoard</title>
+    <script>
+      (() => {
+        try {
+          const storedTheme = localStorage.getItem("devboard-theme") || "system";
+          const font = localStorage.getItem("devboard-font");
+          const mono = localStorage.getItem("devboard-mono-font");
+          const prefersDark =
+            storedTheme === "system" &&
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          const resolvedTheme =
+            storedTheme === "system" ? (prefersDark ? "night" : "light") : storedTheme;
+          document.documentElement.setAttribute("data-theme", resolvedTheme);
+          if (font && font !== "system") {
+            document.documentElement.style.setProperty("--font-sans", font);
+          }
+          if (mono && mono !== "system") {
+            document.documentElement.style.setProperty("--font-mono", mono);
+          }
+        } catch (err) {
+          // no-op
+        }
+      })();
+    </script>
   </head>
   <body class="bg-base-100 text-base-content">
     <div id="root"></div>

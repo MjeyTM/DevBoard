@@ -7,7 +7,6 @@ import { db } from "../data/db";
 import { useSettings } from "../hooks/useSettings";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import { useUIStore } from "../stores/uiStore";
 import type { Task } from "../types/models";
 import { ProjectHeader } from "../components/layout/ProjectHeader";
 
@@ -15,7 +14,6 @@ export const ProjectCalendarPage = () => {
   const { projectId } = useParams();
   const { settings } = useSettings();
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
-  const { setSelectedTask } = useUIStore();
 
   const tasks =
     useLiveQuery<Task[]>(
@@ -93,11 +91,11 @@ export const ProjectCalendarPage = () => {
               <div className="font-medium">{dayLabel}</div>
               <div className="flex flex-col gap-1">
                 {dayTasks.slice(0, 3).map((task) => (
-                  <button key={task.taskId} type="button" onClick={() => setSelectedTask(task.taskId)}>
+                  <div key={task.taskId}>
                     <Badge variant="secondary" className="truncate">
                       {task.title}
                     </Badge>
-                  </button>
+                  </div>
                 ))}
                 {dayTasks.length > 3 && (
                   <div className="text-[10px] text-base-content/60">+{dayTasks.length - 3} more</div>

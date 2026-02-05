@@ -26,27 +26,39 @@ body {
   }
 
   .sidebar-shell {
-    @apply bg-base-200/60 text-base-content border-r border-base-300/40;
+    @apply bg-base-200/50 text-base-content border-r border-base-300/40;
   }
 
   .sidebar-title {
-    @apply text-sm font-semibold tracking-tight;
+    @apply text-[13px] font-medium tracking-tight;
   }
 
   .sidebar-section-title {
-    @apply text-[11px] uppercase tracking-wider text-base-content/50;
+    @apply text-[10px] uppercase tracking-[0.2em] text-base-content/45;
   }
 
   .sidebar-item {
-    @apply flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-base-content/70 transition-colors;
+    @apply flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] text-base-content/70 transition-colors;
   }
 
   .sidebar-item-active {
-    @apply bg-base-200/60 text-base-content;
+    @apply bg-base-200/80 text-base-content;
   }
 
   .sidebar-item-hover {
-    @apply hover:bg-base-200/40 hover:text-base-content;
+    @apply hover:bg-base-200/60 hover:text-base-content;
+  }
+
+  .sidebar-icon-item {
+    @apply h-9 w-9 rounded-xl bg-base-100/80 text-base-content/60 border border-base-200/60 flex items-center justify-center transition-colors hover:bg-base-200/70 hover:text-base-content;
+  }
+
+  .sidebar-icon-item-active {
+    @apply bg-base-200/80 text-base-content;
+  }
+
+  .sidebar-icon-divider {
+    @apply h-px w-6 bg-base-200/80 my-1;
   }
 
   .surface-card {
@@ -99,6 +111,26 @@ body {
 
   .tab-pill-active {
     @apply bg-base-200/70 text-base-content;
+  }
+
+  .tabbar {
+    @apply flex items-center gap-2 overflow-x-auto border-b border-base-200/60 bg-base-100/80 px-4 py-2;
+  }
+
+  .tabbar-item {
+    @apply flex items-center gap-2 rounded-lg border border-transparent bg-base-200/40 px-3 py-1.5 text-xs text-base-content/70 hover:bg-base-200/70 transition;
+  }
+
+  .tabbar-item-active {
+    @apply bg-base-200 text-base-content shadow-sm border-base-200/80;
+  }
+
+  .tabbar-close {
+    @apply ml-1 rounded-full p-1 text-base-content/50 hover:text-base-content hover:bg-base-300/60;
+  }
+
+  .tabbar-add {
+    @apply ml-auto flex h-7 w-7 items-center justify-center rounded-md border border-base-200/60 text-base-content/60 hover:text-base-content hover:bg-base-200/70 transition;
   }
 }
 

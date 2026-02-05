@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Select } from "../ui/select";
+import { Plus } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -18,7 +19,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export const ProjectFormDialog = () => {
+export const ProjectFormDialog = ({ compact }: { compact?: boolean }) => {
   const [open, setOpen] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -42,7 +43,9 @@ export const ProjectFormDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">New</Button>
+        <Button size={compact ? "icon" : "sm"} variant="outline" aria-label="New project">
+          {compact ? <Plus size={14} /> : "New"}
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

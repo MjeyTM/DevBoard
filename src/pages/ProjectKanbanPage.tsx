@@ -1,7 +1,7 @@
 import { DndContext, DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "../data/db";
 import { createTask, deleteTask, duplicateTask, updateTask } from "../data/api";
@@ -30,8 +30,10 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Select } from "../components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { DatePicker } from "../components/ui/date-picker";
+import { MultiSelect } from "../components/ui/multi-select";
 import { createId } from "../utils/uuid";
-import { toCalendarInput, toIsoDate } from "../lib/date";
 
 const typeIconMap: Record<Task["type"], React.ElementType> = {
   Feature: Lightbulb,
@@ -139,7 +141,6 @@ const DraggableTask = ({
   priority,
   type,
   tags,
-  onSelect,
   onDelete,
   onDuplicate,
   onContextMenu,
@@ -150,7 +151,6 @@ const DraggableTask = ({
   priority: Task["priority"];
   type: Task["type"];
   tags: string[];
-  onSelect: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
   onContextMenu: (event: React.MouseEvent) => void;
@@ -169,13 +169,13 @@ const DraggableTask = ({
     <div
       ref={setNodeRef}
       style={style}
-      onClick={onSelect}
+      onClick={onEdit}
       onContextMenu={onContextMenu}
       className="group rounded-xl bg-base-100 px-3 py-2 text-sm shadow-sm hover:shadow-md transition-shadow"
       role="button"
       tabIndex={0}
       onKeyDown={(event) => {
-        if (event.key === "Enter") onSelect();
+        if (event.key === "Enter") onEdit();
         if (event.key.toLowerCase() === "e") onEdit();
         if (event.key === "Delete" || event.key === "Backspace") onDelete();
       }}
@@ -253,7 +253,6 @@ const KanbanColumn = ({
   status,
   tasks,
   onAdd,
-  onSelect,
   onDelete,
   onDuplicate,
   onStartInline,
@@ -263,7 +262,6 @@ const KanbanColumn = ({
   status: string;
   tasks: { taskId: string; title: string; priority: Task["priority"]; type: Task["type"]; tags: string[] }[];
   onAdd: () => void;
-  onSelect: (taskId: string) => void;
   onDelete: (taskId: string) => void;
   onDuplicate: (taskId: string) => void;
   onStartInline: () => void;
@@ -300,7 +298,6 @@ const KanbanColumn = ({
             priority={task.priority}
             type={task.type}
             tags={task.tags}
-            onSelect={() => onSelect(task.taskId)}
             onDelete={() => onDelete(task.taskId)}
             onDuplicate={() => onDuplicate(task.taskId)}
             onContextMenu={(event) => onContextMenu(event, task.taskId)}
@@ -327,7 +324,7 @@ export const ProjectKanbanPage = () => {
   const [createEffort, setCreateEffort] = useState("");
   const [createStartDate, setCreateStartDate] = useState("");
   const [createDueDate, setCreateDueDate] = useState("");
-  const [createTags, setCreateTags] = useState("");
+  const [createTags, setCreateTags] = useState<string[]>([]);
   const [createAssignee, setCreateAssignee] = useState("");
   const [createDependencies, setCreateDependencies] = useState("");
   const [createBlockedReason, setCreateBlockedReason] = useState("");
@@ -346,7 +343,7 @@ export const ProjectKanbanPage = () => {
   const [editEffort, setEditEffort] = useState("");
   const [editStartDate, setEditStartDate] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
-  const [editTags, setEditTags] = useState("");
+  const [editTags, setEditTags] = useState<string[]>([]);
   const [editAssignee, setEditAssignee] = useState("");
   const [editDependencies, setEditDependencies] = useState("");
   const [editBlockedReason, setEditBlockedReason] = useState("");
@@ -362,6 +359,10 @@ export const ProjectKanbanPage = () => {
       () => (projectId ? db.tasks.where("projectId").equals(projectId).toArray() : []),
       [projectId]
     ) ?? [];
+  const tagOptions = useMemo(
+    () => Array.from(new Set(tasks.flatMap((task) => task.tags))).sort(),
+    [tasks]
+  );
 
   const grouped = settings.statuses.reduce<Record<string, typeof tasks>>((acc, status) => {
     acc[status] = tasks.filter((task) => task.status === status);
@@ -390,7 +391,7 @@ export const ProjectKanbanPage = () => {
     setCreateEffort("");
     setCreateStartDate("");
     setCreateDueDate("");
-    setCreateTags("");
+    setCreateTags([]);
     setCreateAssignee("");
     setCreateDependencies("");
     setCreateBlockedReason("");
@@ -427,7 +428,7 @@ export const ProjectKanbanPage = () => {
       effort: parseEffort(createEffort),
       startDate: createStartDate || undefined,
       dueDate: createDueDate || undefined,
-      tags: parseCsv(createTags),
+      tags: createTags,
       assignee: createAssignee || undefined,
       dependencies: parseCsv(createDependencies),
       blockedReason: createBlockedReason || undefined,
@@ -453,7 +454,7 @@ export const ProjectKanbanPage = () => {
     setEditEffort(task.effort?.toString() ?? "");
     setEditStartDate(task.startDate ?? "");
     setEditDueDate(task.dueDate ?? "");
-    setEditTags(task.tags.join(", "));
+    setEditTags(task.tags);
     setEditAssignee(task.assignee ?? "");
     setEditDependencies(task.dependencies.join(", "));
     setEditBlockedReason(task.blockedReason ?? "");
@@ -476,7 +477,7 @@ export const ProjectKanbanPage = () => {
       effort: parseEffort(editEffort),
       startDate: editStartDate || undefined,
       dueDate: editDueDate || undefined,
-      tags: parseCsv(editTags),
+      tags: editTags,
       assignee: editAssignee || undefined,
       dependencies: parseCsv(editDependencies),
       blockedReason: editBlockedReason || undefined,
@@ -542,7 +543,6 @@ export const ProjectKanbanPage = () => {
                 tags: task.tags,
               }))}
               onAdd={() => handleAdd(status)}
-              onSelect={(taskId) => setSelectedTask(taskId)}
               onDelete={(taskId) => handleDelete(taskId)}
               onDuplicate={(taskId) => handleDuplicate(taskId)}
               onStartInline={() => handleAdd(status)}
@@ -616,177 +616,189 @@ export const ProjectKanbanPage = () => {
           }
         }}
       >
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Create Task</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs text-base-content/60">Title</label>
-              <Input
-                placeholder="Task title"
-                value={createTitle}
-                onChange={(event) => setCreateTitle(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Description</label>
-              <Textarea
-                rows={4}
-                placeholder="Short description"
-                value={createDescription}
-                onChange={(event) => setCreateDescription(event.target.value)}
-              />
-            </div>
-            <div className="grid md:grid-cols-3 gap-2">
+      <DialogContent className="max-w-3xl p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-5 pb-3 border-b border-base-200/60">
+          <DialogTitle>Create Task</DialogTitle>
+        </DialogHeader>
+        <div className="px-6 pb-6 pt-4 max-h-[70vh] overflow-y-auto">
+          <Tabs defaultValue="basics" className="space-y-4">
+            <TabsList className="bg-base-200/60">
+              <TabsTrigger value="basics">Basics</TabsTrigger>
+              <TabsTrigger value="details">Details</TabsTrigger>
+            </TabsList>
+            <TabsContent value="basics" className="space-y-4">
               <div>
-                <label className="text-xs text-base-content/60">Status</label>
-                <Select
-                  value={createStatusValue}
-                  onChange={(event) => setCreateStatusValue(event.target.value)}
-                >
-                  {settings.statuses.map((status) => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-base-content/60">Type</label>
-                <Select value={createType} onChange={(event) => setCreateType(event.target.value as Task["type"])}>
-                  {Object.keys(typeIconMap).map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-base-content/60">Priority</label>
-                <Select
-                  value={createPriority}
-                  onChange={(event) => setCreatePriority(event.target.value as Task["priority"])}
-                >
-                  {["P0", "P1", "P2", "P3"].map((priority) => (
-                    <option key={priority} value={priority}>{priority}</option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-            <div className="grid md:grid-cols-3 gap-2">
-              <div>
-                <label className="text-xs text-base-content/60">Severity</label>
-                <Select
-                  value={createSeverity}
-                  onChange={(event) => setCreateSeverity(event.target.value as Task["severity"])}
-                >
-                  <option value="">—</option>
-                  {["S1", "S2", "S3", "S4"].map((severity) => (
-                    <option key={severity} value={severity}>{severity}</option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-base-content/60">Effort</label>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Title</label>
                 <Input
-                  placeholder="S / M / L or points"
-                  value={createEffort}
-                  onChange={(event) => setCreateEffort(event.target.value)}
+                  placeholder="Task title"
+                  value={createTitle}
+                  onChange={(event) => setCreateTitle(event.target.value)}
                 />
               </div>
               <div>
-                <label className="text-xs text-base-content/60">Assignee</label>
-                <Input
-                  placeholder="Name"
-                  value={createAssignee}
-                  onChange={(event) => setCreateAssignee(event.target.value)}
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Description</label>
+                <Textarea
+                  rows={3}
+                  placeholder="Short description"
+                  value={createDescription}
+                  onChange={(event) => setCreateDescription(event.target.value)}
                 />
               </div>
-            </div>
-            <div className="grid md:grid-cols-2 gap-2">
+              <div className="grid md:grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Status</label>
+                  <Select
+                    value={createStatusValue}
+                    onChange={(event) => setCreateStatusValue(event.target.value)}
+                  >
+                    {settings.statuses.map((status) => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Type</label>
+                  <Select value={createType} onChange={(event) => setCreateType(event.target.value as Task["type"])}>
+                    {Object.keys(typeIconMap).map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Priority</label>
+                  <Select
+                    value={createPriority}
+                    onChange={(event) => setCreatePriority(event.target.value as Task["priority"])}
+                  >
+                    {["P0", "P1", "P2", "P3"].map((priority) => (
+                      <option key={priority} value={priority}>{priority}</option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+              <div className="grid md:grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Severity</label>
+                  <Select
+                    value={createSeverity}
+                    onChange={(event) => setCreateSeverity(event.target.value as Task["severity"])}
+                  >
+                    <option value="">—</option>
+                    {["S1", "S2", "S3", "S4"].map((severity) => (
+                      <option key={severity} value={severity}>{severity}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Effort</label>
+                  <Input
+                    placeholder="S / M / L or points"
+                    value={createEffort}
+                    onChange={(event) => setCreateEffort(event.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Assignee</label>
+                  <Input
+                    placeholder="Name"
+                    value={createAssignee}
+                    onChange={(event) => setCreateAssignee(event.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Start Date</label>
+                  <DatePicker
+                    calendar={settings.calendar}
+                    value={createStartDate || undefined}
+                    onChange={(value) => setCreateStartDate(value ?? "")}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Due Date</label>
+                  <DatePicker
+                    calendar={settings.calendar}
+                    value={createDueDate || undefined}
+                    onChange={(value) => setCreateDueDate(value ?? "")}
+                  />
+                </div>
+              </div>
               <div>
-                <label className="text-xs text-base-content/60">Start Date</label>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Tags</label>
+                <MultiSelect
+                  options={tagOptions}
+                  value={createTags}
+                  onChange={setCreateTags}
+                  placeholder="Add tags"
+                  allowCreate
+                />
+              </div>
+            </TabsContent>
+            <TabsContent value="details" className="space-y-4">
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Dependencies (task IDs)</label>
                 <Input
-                  type={settings.calendar === "gregorian" ? "date" : "text"}
-                  value={toCalendarInput(createStartDate, settings.calendar)}
-                  onChange={(event) =>
-                    setCreateStartDate(toIsoDate(event.target.value, settings.calendar) ?? "")
-                  }
+                  placeholder="uuid, uuid"
+                  value={createDependencies}
+                  onChange={(event) => setCreateDependencies(event.target.value)}
                 />
               </div>
               <div>
-                <label className="text-xs text-base-content/60">Due Date</label>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Blocked Reason</label>
                 <Input
-                  type={settings.calendar === "gregorian" ? "date" : "text"}
-                  value={toCalendarInput(createDueDate, settings.calendar)}
-                  onChange={(event) =>
-                    setCreateDueDate(toIsoDate(event.target.value, settings.calendar) ?? "")
-                  }
+                  placeholder="Why is this blocked?"
+                  value={createBlockedReason}
+                  onChange={(event) => setCreateBlockedReason(event.target.value)}
                 />
               </div>
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Tags (comma separated)</label>
-              <Input
-                placeholder="frontend, urgent"
-                value={createTags}
-                onChange={(event) => setCreateTags(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Dependencies (task IDs)</label>
-              <Input
-                placeholder="uuid, uuid"
-                value={createDependencies}
-                onChange={(event) => setCreateDependencies(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Blocked Reason</label>
-              <Input
-                placeholder="Why is this blocked?"
-                value={createBlockedReason}
-                onChange={(event) => setCreateBlockedReason(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Checklist (one per line)</label>
-              <Textarea
-                rows={3}
-                placeholder="[ ] First item"
-                value={createChecklist}
-                onChange={(event) => setCreateChecklist(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Attachments (Label | URL per line)</label>
-              <Textarea
-                rows={3}
-                placeholder="Spec | https://..."
-                value={createAttachments}
-                onChange={(event) => setCreateAttachments(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Linked Notes (note IDs)</label>
-              <Input
-                placeholder="uuid, uuid"
-                value={createLinkedNotes}
-                onChange={(event) => setCreateLinkedNotes(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Time Logs (start,end,note per line)</label>
-              <Textarea
-                rows={3}
-                placeholder="1700000000000,1700003600000,focus"
-                value={createTimeLogs}
-                onChange={(event) => setCreateTimeLogs(event.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={handleInlineCreate}>Create</Button>
-              <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Checklist (one per line)</label>
+                <Textarea
+                  rows={3}
+                  placeholder="[ ] First item"
+                  value={createChecklist}
+                  onChange={(event) => setCreateChecklist(event.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">
+                  Attachments (Label | URL per line)
+                </label>
+                <Textarea
+                  rows={3}
+                  placeholder="Spec | https://..."
+                  value={createAttachments}
+                  onChange={(event) => setCreateAttachments(event.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Linked Notes (note IDs)</label>
+                <Input
+                  placeholder="uuid, uuid"
+                  value={createLinkedNotes}
+                  onChange={(event) => setCreateLinkedNotes(event.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">
+                  Time Logs (start,end,note per line)
+                </label>
+                <Textarea
+                  rows={3}
+                  placeholder="1700000000000,1700003600000,focus"
+                  value={createTimeLogs}
+                  onChange={(event) => setCreateTimeLogs(event.target.value)}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+          <div className="mt-4 flex items-center justify-end gap-2">
+            <Button onClick={handleInlineCreate}>Create</Button>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button>
           </div>
-        </DialogContent>
+        </div>
+      </DialogContent>
       </Dialog>
       <Dialog
         open={editOpen}
@@ -797,177 +809,189 @@ export const ProjectKanbanPage = () => {
           }
         }}
       >
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs text-base-content/60">Title</label>
-              <Input
-                placeholder="Task title"
-                value={editTitle}
-                onChange={(event) => setEditTitle(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Description</label>
-              <Textarea
-                rows={4}
-                placeholder="Short description"
-                value={editDescription}
-                onChange={(event) => setEditDescription(event.target.value)}
-              />
-            </div>
-            <div className="grid md:grid-cols-3 gap-2">
+      <DialogContent className="max-w-3xl p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-5 pb-3 border-b border-base-200/60">
+          <DialogTitle>Edit Task</DialogTitle>
+        </DialogHeader>
+        <div className="px-6 pb-6 pt-4 max-h-[70vh] overflow-y-auto">
+          <Tabs defaultValue="basics" className="space-y-4">
+            <TabsList className="bg-base-200/60">
+              <TabsTrigger value="basics">Basics</TabsTrigger>
+              <TabsTrigger value="details">Details</TabsTrigger>
+            </TabsList>
+            <TabsContent value="basics" className="space-y-4">
               <div>
-                <label className="text-xs text-base-content/60">Status</label>
-                <Select
-                  value={editStatus}
-                  onChange={(event) => setEditStatus(event.target.value)}
-                >
-                  {settings.statuses.map((status) => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-base-content/60">Type</label>
-                <Select value={editType} onChange={(event) => setEditType(event.target.value as Task["type"])}>
-                  {Object.keys(typeIconMap).map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-base-content/60">Priority</label>
-                <Select
-                  value={editPriority}
-                  onChange={(event) => setEditPriority(event.target.value as Task["priority"])}
-                >
-                  {["P0", "P1", "P2", "P3"].map((priority) => (
-                    <option key={priority} value={priority}>{priority}</option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-            <div className="grid md:grid-cols-3 gap-2">
-              <div>
-                <label className="text-xs text-base-content/60">Severity</label>
-                <Select
-                  value={editSeverity}
-                  onChange={(event) => setEditSeverity(event.target.value as Task["severity"])}
-                >
-                  <option value="">—</option>
-                  {["S1", "S2", "S3", "S4"].map((severity) => (
-                    <option key={severity} value={severity}>{severity}</option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-base-content/60">Effort</label>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Title</label>
                 <Input
-                  placeholder="S / M / L or points"
-                  value={editEffort}
-                  onChange={(event) => setEditEffort(event.target.value)}
+                  placeholder="Task title"
+                  value={editTitle}
+                  onChange={(event) => setEditTitle(event.target.value)}
                 />
               </div>
               <div>
-                <label className="text-xs text-base-content/60">Assignee</label>
-                <Input
-                  placeholder="Name"
-                  value={editAssignee}
-                  onChange={(event) => setEditAssignee(event.target.value)}
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Description</label>
+                <Textarea
+                  rows={3}
+                  placeholder="Short description"
+                  value={editDescription}
+                  onChange={(event) => setEditDescription(event.target.value)}
                 />
               </div>
-            </div>
-            <div className="grid md:grid-cols-2 gap-2">
+              <div className="grid md:grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Status</label>
+                  <Select
+                    value={editStatus}
+                    onChange={(event) => setEditStatus(event.target.value)}
+                  >
+                    {settings.statuses.map((status) => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Type</label>
+                  <Select value={editType} onChange={(event) => setEditType(event.target.value as Task["type"])}>
+                    {Object.keys(typeIconMap).map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Priority</label>
+                  <Select
+                    value={editPriority}
+                    onChange={(event) => setEditPriority(event.target.value as Task["priority"])}
+                  >
+                    {["P0", "P1", "P2", "P3"].map((priority) => (
+                      <option key={priority} value={priority}>{priority}</option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+              <div className="grid md:grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Severity</label>
+                  <Select
+                    value={editSeverity}
+                    onChange={(event) => setEditSeverity(event.target.value as Task["severity"])}
+                  >
+                    <option value="">—</option>
+                    {["S1", "S2", "S3", "S4"].map((severity) => (
+                      <option key={severity} value={severity}>{severity}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Effort</label>
+                  <Input
+                    placeholder="S / M / L or points"
+                    value={editEffort}
+                    onChange={(event) => setEditEffort(event.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Assignee</label>
+                  <Input
+                    placeholder="Name"
+                    value={editAssignee}
+                    onChange={(event) => setEditAssignee(event.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Start Date</label>
+                  <DatePicker
+                    calendar={settings.calendar}
+                    value={editStartDate || undefined}
+                    onChange={(value) => setEditStartDate(value ?? "")}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] uppercase tracking-wide text-base-content/50">Due Date</label>
+                  <DatePicker
+                    calendar={settings.calendar}
+                    value={editDueDate || undefined}
+                    onChange={(value) => setEditDueDate(value ?? "")}
+                  />
+                </div>
+              </div>
               <div>
-                <label className="text-xs text-base-content/60">Start Date</label>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Tags</label>
+                <MultiSelect
+                  options={tagOptions}
+                  value={editTags}
+                  onChange={setEditTags}
+                  placeholder="Add tags"
+                  allowCreate
+                />
+              </div>
+            </TabsContent>
+            <TabsContent value="details" className="space-y-4">
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Dependencies (task IDs)</label>
                 <Input
-                  type={settings.calendar === "gregorian" ? "date" : "text"}
-                  value={toCalendarInput(editStartDate, settings.calendar)}
-                  onChange={(event) =>
-                    setEditStartDate(toIsoDate(event.target.value, settings.calendar) ?? "")
-                  }
+                  placeholder="uuid, uuid"
+                  value={editDependencies}
+                  onChange={(event) => setEditDependencies(event.target.value)}
                 />
               </div>
               <div>
-                <label className="text-xs text-base-content/60">Due Date</label>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Blocked Reason</label>
                 <Input
-                  type={settings.calendar === "gregorian" ? "date" : "text"}
-                  value={toCalendarInput(editDueDate, settings.calendar)}
-                  onChange={(event) =>
-                    setEditDueDate(toIsoDate(event.target.value, settings.calendar) ?? "")
-                  }
+                  placeholder="Why is this blocked?"
+                  value={editBlockedReason}
+                  onChange={(event) => setEditBlockedReason(event.target.value)}
                 />
               </div>
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Tags (comma separated)</label>
-              <Input
-                placeholder="frontend, urgent"
-                value={editTags}
-                onChange={(event) => setEditTags(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Dependencies (task IDs)</label>
-              <Input
-                placeholder="uuid, uuid"
-                value={editDependencies}
-                onChange={(event) => setEditDependencies(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Blocked Reason</label>
-              <Input
-                placeholder="Why is this blocked?"
-                value={editBlockedReason}
-                onChange={(event) => setEditBlockedReason(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Checklist (one per line)</label>
-              <Textarea
-                rows={3}
-                placeholder="[ ] First item"
-                value={editChecklist}
-                onChange={(event) => setEditChecklist(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Attachments (Label | URL per line)</label>
-              <Textarea
-                rows={3}
-                placeholder="Spec | https://..."
-                value={editAttachments}
-                onChange={(event) => setEditAttachments(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Linked Notes (note IDs)</label>
-              <Input
-                placeholder="uuid, uuid"
-                value={editLinkedNotes}
-                onChange={(event) => setEditLinkedNotes(event.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-base-content/60">Time Logs (start,end,note per line)</label>
-              <Textarea
-                rows={3}
-                placeholder="1700000000000,1700003600000,focus"
-                value={editTimeLogs}
-                onChange={(event) => setEditTimeLogs(event.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={handleEditSubmit}>Save</Button>
-              <Button variant="ghost" onClick={handleEditCancel}>Cancel</Button>
-            </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Checklist (one per line)</label>
+                <Textarea
+                  rows={3}
+                  placeholder="[ ] First item"
+                  value={editChecklist}
+                  onChange={(event) => setEditChecklist(event.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">
+                  Attachments (Label | URL per line)
+                </label>
+                <Textarea
+                  rows={3}
+                  placeholder="Spec | https://..."
+                  value={editAttachments}
+                  onChange={(event) => setEditAttachments(event.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">Linked Notes (note IDs)</label>
+                <Input
+                  placeholder="uuid, uuid"
+                  value={editLinkedNotes}
+                  onChange={(event) => setEditLinkedNotes(event.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] uppercase tracking-wide text-base-content/50">
+                  Time Logs (start,end,note per line)
+                </label>
+                <Textarea
+                  rows={3}
+                  placeholder="1700000000000,1700003600000,focus"
+                  value={editTimeLogs}
+                  onChange={(event) => setEditTimeLogs(event.target.value)}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+          <div className="mt-4 flex items-center justify-end gap-2">
+            <Button onClick={handleEditSubmit}>Save</Button>
+            <Button variant="ghost" onClick={handleEditCancel}>Cancel</Button>
           </div>
-        </DialogContent>
+        </div>
+      </DialogContent>
       </Dialog>
     </div>
   );
