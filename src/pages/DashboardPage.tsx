@@ -18,6 +18,7 @@ export const DashboardPage = () => {
     (task) => task.status.toLowerCase() === "done" && Date.now() - task.updatedAt < 7 * 86400000
   );
   const openBugs = tasks.filter((task) => task.type === "Bug" && task.status !== "Done");
+  const inProgress = tasks.filter((task) => task.status.toLowerCase().includes("progress"));
 
   const chartData = useMemo(() => {
     const groups: Record<string, number> = {};
@@ -39,8 +40,8 @@ export const DashboardPage = () => {
         <div className="page-title">Dashboard</div>
         <div className="page-subtitle">A calm overview of your active projects and work.</div>
       </div>
-      <div className="grid gap-4 md:grid-cols-6 auto-rows-fr">
-      <Card className="md:col-span-2">
+      <div className="grid gap-4 lg:grid-cols-12 auto-rows-[minmax(140px,auto)]">
+      <Card className="lg:col-span-3">
         <CardHeader>
           <CardTitle>Active Projects</CardTitle>
         </CardHeader>
@@ -53,7 +54,7 @@ export const DashboardPage = () => {
           </div>
         </CardContent>
       </Card>
-      <Card className="md:col-span-2">
+      <Card className="lg:col-span-3">
         <CardHeader>
           <CardTitle>Today</CardTitle>
         </CardHeader>
@@ -62,7 +63,7 @@ export const DashboardPage = () => {
           <div className="text-sm text-base-content/60">Tasks due today</div>
         </CardContent>
       </Card>
-      <Card className="md:col-span-2">
+      <Card className="lg:col-span-3">
         <CardHeader>
           <CardTitle>Open Bugs</CardTitle>
         </CardHeader>
@@ -72,7 +73,17 @@ export const DashboardPage = () => {
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-4 md:row-span-2">
+      <Card className="lg:col-span-3">
+        <CardHeader>
+          <CardTitle>In Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-semibold">{inProgress.length}</div>
+          <div className="text-sm text-base-content/60">Active tasks</div>
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-7 lg:row-span-2">
         <CardHeader>
           <CardTitle>Upcoming (7 days)</CardTitle>
         </CardHeader>
@@ -97,7 +108,7 @@ export const DashboardPage = () => {
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-2 md:row-span-2">
+      <Card className="lg:col-span-5 lg:row-span-2">
         <CardHeader>
           <CardTitle>Status Breakdown</CardTitle>
         </CardHeader>
@@ -117,7 +128,7 @@ export const DashboardPage = () => {
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-3">
+      <Card className="lg:col-span-6">
         <CardHeader>
           <CardTitle>Recently Updated Notes</CardTitle>
         </CardHeader>
@@ -142,7 +153,7 @@ export const DashboardPage = () => {
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-3">
+      <Card className="lg:col-span-6">
         <CardHeader>
           <CardTitle>Velocity</CardTitle>
         </CardHeader>

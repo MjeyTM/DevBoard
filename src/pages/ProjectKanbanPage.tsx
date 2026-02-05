@@ -60,6 +60,22 @@ const typeVariantMap: Record<Task["type"], "accent" | "error" | "warning" | "inf
   Research: "accent",
 };
 
+const typeStyleMap: Record<Task["type"], string> = {
+  Feature: "border-l-primary/70 bg-primary/5",
+  Bug: "border-l-error/70 bg-error/5",
+  Fix: "border-l-warning/70 bg-warning/5",
+  Chore: "border-l-base-300 bg-base-100",
+  Refactor: "border-l-info/70 bg-info/5",
+  Research: "border-l-accent/70 bg-accent/5",
+};
+
+const priorityDotMap: Record<Task["priority"], string> = {
+  P0: "bg-error",
+  P1: "bg-warning",
+  P2: "bg-info",
+  P3: "bg-base-content/40",
+};
+
 const parseCsv = (value: string) =>
   value
     .split(",")
@@ -164,6 +180,7 @@ const DraggableTask = ({
     transform: CSS.Translate.toString(transform),
   };
   const Icon = typeIconMap[type] ?? Lightbulb;
+  const typeStyle = typeStyleMap[type] ?? "border-l-base-300 bg-base-100";
 
   return (
     <div
@@ -171,7 +188,7 @@ const DraggableTask = ({
       style={style}
       onClick={onEdit}
       onContextMenu={onContextMenu}
-      className="group rounded-xl bg-base-100 px-3 py-2 text-sm shadow-sm hover:shadow-md transition-shadow"
+      className={`group rounded-xl border border-base-200/70 border-l-4 ${typeStyle} px-3 py-2 text-sm shadow-sm hover:shadow-md transition-shadow`}
       role="button"
       tabIndex={0}
       onKeyDown={(event) => {
@@ -203,37 +220,44 @@ const DraggableTask = ({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            type="button"
-            className="h-7 w-7 rounded-full hover:bg-base-200/60 inline-flex items-center justify-center"
-            aria-label="Edit task"
-            onClick={(event) => {
-              event.stopPropagation();
-              onEdit();
-            }}
-          >
-            <Edit3 size={14} />
-          </button>
-          <button
-            type="button"
-            className="h-7 w-7 rounded-full hover:bg-base-200/60 inline-flex items-center justify-center"
-            aria-label="More actions"
-            onClick={onContextMenu}
-          >
-            <MoreHorizontal size={14} />
-          </button>
-          <button
-            type="button"
-            className="h-7 w-7 rounded-full hover:bg-base-200/60 inline-flex items-center justify-center"
-            aria-label="Delete task"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDelete();
-            }}
-          >
-            <Trash2 size={14} />
-          </button>
+        <div className="flex items-center gap-1">
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${priorityDotMap[priority]}`}
+            aria-label={`Priority ${priority}`}
+            title={`Priority ${priority}`}
+          />
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              type="button"
+              className="h-7 w-7 rounded-full hover:bg-base-200/60 inline-flex items-center justify-center"
+              aria-label="Edit task"
+              onClick={(event) => {
+                event.stopPropagation();
+                onEdit();
+              }}
+            >
+              <Edit3 size={14} />
+            </button>
+            <button
+              type="button"
+              className="h-7 w-7 rounded-full hover:bg-base-200/60 inline-flex items-center justify-center"
+              aria-label="More actions"
+              onClick={onContextMenu}
+            >
+              <MoreHorizontal size={14} />
+            </button>
+            <button
+              type="button"
+              className="h-7 w-7 rounded-full hover:bg-base-200/60 inline-flex items-center justify-center"
+              aria-label="Delete task"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
         </div>
       </div>
       {tags.length > 0 && (
@@ -273,8 +297,8 @@ const KanbanColumn = ({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col gap-2 rounded-2xl bg-base-100/80 p-3 min-h-[220px] shadow-sm transition-colors ${
-        isOver ? "bg-base-200/60" : ""
+      className={`flex flex-col gap-2 rounded-2xl bg-base-200/50 p-3 min-h-[220px] shadow-sm border border-base-200/70 transition-colors ${
+        isOver ? "bg-base-200/80" : ""
       }`}
     >
       <div className="flex items-center justify-between">
