@@ -133,6 +133,26 @@ UI/UX and features are evolving with a focus on polish, performance, and develop
 
 ---
 
+## 🖥 Desktop (Electron)
+
+### Dev mode
+
+```bash
+npm install
+npm run electron:dev
+```
+
+### Build Windows .exe
+
+```bash
+npm install
+npm run electron:dist
+```
+
+Artifacts will be placed in `release/`.
+
+---
+
 ## 📄 License
 
 MIT (or your preferred license)

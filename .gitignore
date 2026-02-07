@@ -1,3 +1,10 @@
 node_modules/
 .env
 THE_PLAN.md
+dist/
+release/
+*.log
+scripts/
+.vscode/
+electron/
+
